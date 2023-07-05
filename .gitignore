@@ -171,3 +171,6 @@ TestResults/
 .gitignore
 .DS_Store
 Thumbs.db
+
+# rider
+.idea/
