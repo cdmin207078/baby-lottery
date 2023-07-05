@@ -128,3 +128,46 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+# dotnet
+# 编译输出文件夹
+bin/
+obj/
+
+# 全局工具文件夹
+.globaltools/
+
+# Visual Studio Code配置文件夹
+.vscode/
+
+# NuGet缓存文件夹
+.nuget/
+
+# Visual Studio项目文件
+*.sln
+*.csproj
+*.user
+
+# 编辑器临时文件
+*~
+*.swp
+*.swo
+
+# 日志文件
+*.log
+
+# 生成的资源文件
+*.resx.cs
+
+# 编译生成文件
+**/bin/
+**/obj/
+
+# 测试结果文件
+TestResults/
+
+# 基本的忽略规则
+.gitignore
+.DS_Store
+Thumbs.db
