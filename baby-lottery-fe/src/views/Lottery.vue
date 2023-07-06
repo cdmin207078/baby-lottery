@@ -2,47 +2,77 @@
   <main class="flex-grow">
     <div class="winner-list">
       <h2 class="winner-list-title">中奖记录</h2>
-      <div class="prize">
-        <h3>一等奖</h3>
+
+      <div v-for="(lottery, i) in lotterys" :key="i" class="prize">
+        <h3>{{ lottery.name }}</h3>
         <div>
-          <span v-if="winners.firstPrize.length == 0"></span>
-          <span v-else v-for="(winner, index) in winners.firstPrize" :key="index">
-            {{ winner }}
-          </span>
-        </div>
-      </div>
-      <div class="prize">
-        <h3>二等奖</h3>
-        <div>
-          <span v-if="winners.secondPrize.length == 0"></span>
-          <span v-else v-for="(winner, index) in winners.secondPrize" :key="index">
-            {{ winner }}
-          </span>
-        </div>
-      </div>
-      <div class="prize">
-        <h3>三等奖</h3>
-        <div>
-          <span v-if="winners.thirdPrize.length == 0"></span>
-          <span v-else v-for="(winner, index) in winners.thirdPrize" :key="index">
-            {{ winner }}
+          <span v-if="lottery.winners.length == 0"></span>
+          <span v-else v-for="(winner, j) in lottery.winners" :key="j">
+            <transition mode="out-in">
+              {{ winner }}
+            </transition>
           </span>
         </div>
       </div>
     </div>
     <div class="lucky-draw">
-      <a href="javascript:;" @click="drawWinner('firstPrize', 2)"></a>
-      <a href="javascript:;" @click="drawWinner('secondPrize', 5)"></a>
-      <a href="javascript:;" @click="drawWinner('thirdPrize', 10)"></a>
+      <a
+        href="javascript:;"
+        v-for="(lottery, index) in lotterys"
+        @click="drawWinner(lottery.id)"
+        :style="{ backgroundImage: 'url(' + lottery.backgroundImage + ')' }"
+      ></a>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
-type PrizeLevel = 'thirdPrize' | 'secondPrize' | 'firstPrize'
+import { ref, reactive, type Ref } from 'vue'
+
+interface ILotteryInfo {
+  id: number
+  name: string
+  backgroundImage: Ref<string>
+  maxWinnerCount: number
+  winners: string[]
+}
 
 const isLotteryInProgress = ref(false)
+const closeBoxImage = '/src/assets/lottery-box-bg1.png'
+const openBoxImage = '/src/assets/lottery-box-bg8.png'
+
+function getLotteryRecords(id: number) {
+  return localStorage.getItem('lottery-prize-' + id)
+    ? JSON.parse(localStorage.getItem('lottery-prize-' + id)!)
+    : []
+}
+
+const lotterys = reactive<ILotteryInfo[]>([
+  {
+    id: 1,
+    name: '一等奖',
+    backgroundImage:
+      getLotteryRecords(1).length == 2 ? ref<string>(openBoxImage) : ref<string>(closeBoxImage),
+    maxWinnerCount: 2,
+    winners: getLotteryRecords(1)
+  },
+  {
+    id: 2,
+    name: '二等奖',
+    backgroundImage:
+      getLotteryRecords(2).length == 5 ? ref<string>(openBoxImage) : ref<string>(closeBoxImage),
+    maxWinnerCount: 5,
+    winners: getLotteryRecords(2)
+  },
+  {
+    id: 3,
+    name: '三等奖',
+    backgroundImage:
+      getLotteryRecords(3).length == 10 ? ref<string>(openBoxImage) : ref<string>(closeBoxImage),
+    maxWinnerCount: 10,
+    winners: getLotteryRecords(3)
+  }
+])
 
 const lotteryMinNumber = ref<number>(
   localStorage.getItem('lottery-min-number')
@@ -63,47 +93,38 @@ for (let i = lotteryMinNumber.value; i <= lotteryMaxNumber.value; i++) {
 }
 const remainingNumbers = ref(allNumbers.slice())
 
-const winners = reactive({
-  thirdPrize: ref<string[]>(
-    localStorage.getItem('lottery-third-prize')
-      ? JSON.parse(localStorage.getItem('lottery-third-prize')!)
-      : []
-  ),
-  secondPrize: ref<string[]>(
-    localStorage.getItem('lottery-second-prize')
-      ? JSON.parse(localStorage.getItem('lottery-second-prize')!)
-      : []
-  ),
-  firstPrize: ref<string[]>(
-    localStorage.getItem('lottery-first-prize')
-      ? JSON.parse(localStorage.getItem('lottery-first-prize')!)
-      : []
-  )
-})
+function drawWinner(id: number) {
+  console.log(id)
+  if (isLotteryInProgress.value) return
 
-watch(winners.thirdPrize, (newValue) => {
-  localStorage.setItem('lottery-third-prize', JSON.stringify(newValue))
-})
-watch(winners.secondPrize, (newValue) => {
-  localStorage.setItem('lottery-second-prize', JSON.stringify(newValue))
-})
+  var lottery = lotterys.filter((x) => x.id === id)[0]
+  console.log(lottery)
 
-watch(winners.firstPrize, (newValue) => {
-  localStorage.setItem('lottery-first-prize', JSON.stringify(newValue))
-})
-
-const drawWinner = (prizeLevel: PrizeLevel, count: number) => {
-  var prizeWinners = winners[prizeLevel]
-  if (prizeWinners.length > 0) {
-    console.log(prizeLevel + '已经抽过')
+  if (lottery.winners.length > 0) {
+    console.log(lottery.name + '已经抽过')
     return
   }
 
-  for (let i = 0; i < count; i++) {
+  isLotteryInProgress.value = true
+
+  lottery.backgroundImage = openBoxImage
+
+  var count = 0
+  var interval = setInterval(() => {
     const randomIndex = Math.floor(Math.random() * remainingNumbers.value.length)
     const winner = remainingNumbers.value.splice(randomIndex, 1)[0]
-    prizeWinners.push(winner)
-  }
+
+    lottery.winners.push(winner)
+
+    count++
+
+    if (count == lottery.maxWinnerCount) {
+      localStorage.setItem('lottery-prize-' + lottery.id, JSON.stringify(lottery.winners))
+
+      clearInterval(interval)
+      isLotteryInProgress.value = false
+    }
+  }, 1000)
 }
 </script>
 
@@ -114,12 +135,14 @@ main {
 }
 
 .winner-list {
-  @apply flex flex-col m-auto mt-72 px-5;
+  @apply flex flex-col m-auto mt-72;
   width: 860px;
 }
 
 .winner-list-title {
-  @apply text-3xl mb-6 font-bold ml-3 mt-3 text-center;
+  @apply text-5xl mb-6 font-bold mt-0 text-center text-yellow-500;
+  letter-spacing: 10px;
+  font-family: monospace;
 }
 
 .prize {
@@ -131,50 +154,18 @@ main {
 }
 
 .prize span {
-  @apply text-red-500 mx-5;
+  @apply text-red-500 font-extrabold text-2xl mx-5;
+  letter-spacing: 2px;
 }
 
 .lucky-draw {
-  @apply flex items-center justify-center space-x-24 text-center mt-20 transition ease-in-out delay-150;
+  @apply flex items-center justify-center space-x-24 text-center mt-24 transition ease-in-out delay-150;
 }
 
 .lucky-draw a {
-  @apply h-44 w-44;
+  @apply h-44 w-44 hover:scale-125 duration-300;
   background-size: cover;
   background-repeat: no-repeat;
-  animation-name: lottery-box-animation;
-  animation-duration: 1s;
-  animation-iteration-count: infinite;
-  background-image: url('../assets/lottery-box-bg1.png');
-}
-
-@keyframes lottery-box-animation {
-  0% {
-    background-image: url('../assets/lottery-box-bg1.png');
-  }
-  /* 12.5% {
-    background-image: url('../assets/lottery-box-bg1.png');
-  }
-  25% {
-    background-image: url('../assets/lottery-box-bg2.png');
-  }
-  37.5% {
-    background-image: url('../assets/lottery-box-bg3.png');
-  }
-  50% {
-    background-image: url('../assets/lottery-box-bg4.png');
-  }
-  62.5% {
-    background-image: url('../assets/lottery-box-bg5.png');
-  }
-  75% {
-    background-image: url('../assets/lottery-box-bg6.png');
-  }
-  87.5% {
-    background-image: url('../assets/lottery-box-bg7.png');
-  } */
-  100% {
-    background-image: url('../assets/lottery-box-bg8.png');
-  }
+  /* background-image: url('../assets/lottery-box-bg1.png'); */
 }
 </style>

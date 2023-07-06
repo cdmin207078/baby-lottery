@@ -4,6 +4,15 @@
       <h2 class="text-xl mb-4">设置</h2>
       <form @submit.prevent="submitForm">
         <div class="mb-4">
+          <label for="minLotteryNumber" class="block mb-2">抽个奖最小号(包含)</label>
+          <input
+            v-model="minLotteryNumber"
+            type="text"
+            id="minLotteryNumber"
+            class="w-full border-2 border-pink-200 rounded-md p-2"
+          />
+        </div>
+        <div class="mb-4">
           <label for="maxLotteryNumber" class="block mb-2">抽个奖最大号(包含)</label>
           <input
             v-model="maxLotteryNumber"
@@ -62,11 +71,9 @@ function showSuccessMessage() {
 }
 
 function clearLotteryRecords() {
-  
-  localStorage.removeItem('lottery-third-prize')
-  localStorage.removeItem('lottery-second-prize')
-  localStorage.removeItem('lottery-first-prize')
-
+  localStorage.removeItem('lottery-prize-1')
+  localStorage.removeItem('lottery-prize-2')
+  localStorage.removeItem('lottery-prize-3')
   showSuccessMessage()
 }
 </script>
